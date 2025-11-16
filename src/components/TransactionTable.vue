@@ -8,14 +8,18 @@
           <tr>
             <th>
               Date
-              <button class="sort-btn" @click="handleSortClick('date')">{{ sortIcon('date') }}</button>
+              <button class="sort-btn" @click="handleSortClick('date')">
+                {{ sortIcon("date") }}
+              </button>
             </th>
             <th>Description</th>
             <th>Category</th>
             <th>Type</th>
             <th>
               Amount
-              <button class="sort-btn" @click="handleSortClick('amount')">{{ sortIcon('amount') }}</button>
+              <button class="sort-btn" @click="handleSortClick('amount')">
+                {{ sortIcon("amount") }}
+              </button>
             </th>
             <th class="center">Actions</th>
           </tr>
@@ -26,7 +30,7 @@
             <td>{{ t.date }}</td>
             <td v-html="escapeHtml(t.description || '-')"></td>
             <td v-html="escapeHtml(t.category || '-')"></td>
-            <td>{{ t.type === 'income' ? 'Credit' : 'Expense' }}</td>
+            <td>{{ t.type === "income" ? "Credit" : "Expense" }}</td>
             <td>₹{{ formatNum(Number(t.amount)) }}</td>
             <td class="center actions">
               <!-- use emit defined in script -->
@@ -40,7 +44,14 @@
 
     <!-- Pagination Controls -->
     <div class="pagination" v-show="totalItems > 0">
-      <button class="btn page-arrow" :disabled="currentPage === 1" @click="prevPage" title="Previous Page">❮</button>
+      <button
+        class="btn page-arrow"
+        :disabled="currentPage === 1"
+        @click="prevPage"
+        title="Previous Page"
+      >
+        ❮
+      </button>
 
       <span id="page-numbers">
         <template v-for="(p, idx) in pageButtons" :key="`pb-${idx}`">
@@ -49,12 +60,21 @@
             class="btn"
             :class="{ 'active-page': p === currentPage }"
             @click="setPage(p)"
-          >{{ p }}</button>
-          <span v-else style="padding:0 6px">…</span>
+          >
+            {{ p }}
+          </button>
+          <span v-else style="padding: 0 6px">…</span>
         </template>
       </span>
 
-      <button class="btn page-arrow" :disabled="currentPage === totalPages" @click="nextPage" title="Next Page">❯</button>
+      <button
+        class="btn page-arrow"
+        :disabled="currentPage === totalPages"
+        @click="nextPage"
+        title="Next Page"
+      >
+        ❯
+      </button>
     </div>
 
     <p id="no-data" v-if="totalItems === 0">No transactions yet. Add one!</p>
@@ -66,18 +86,22 @@ import { ref, computed, watch, onMounted } from "vue";
 import { useFinanceStore } from "../stores/finance";
 
 // declare emits so parent can listen
-const emit = defineEmits(['edit','delete']);
+const emit = defineEmits(["edit", "delete"]);
 
 // small helpers to forward template clicks (keeps template clean)
-function emitEdit(id) { emit('edit', id); }
-function emitDelete(id) { emit('delete', id); }
+function emitEdit(id) {
+  emit("edit", id);
+}
+function emitDelete(id) {
+  emit("delete", id);
+}
 
 // props for filters
 const props = defineProps({
   filters: {
     type: Object,
-    default: () => ({ start: null, end: null, category: "" })
-  }
+    default: () => ({ start: null, end: null, category: "" }),
+  },
 });
 
 const store = useFinanceStore();
@@ -85,10 +109,14 @@ const store = useFinanceStore();
 const ITEMS_PER_PAGE = 10;
 const currentPage = ref(1);
 const sortState = ref({ column: null, order: null });
-const activeFilters = computed(() => props.filters ?? { start: null, end: null, category: "" });
+const activeFilters = computed(
+  () => props.filters ?? { start: null, end: null, category: "" }
+);
 
 // safe transactions (support either store.items.transactions or store.items)
-const transactions = computed(() => store.items?.transactions ?? store.items ?? []);
+const transactions = computed(
+  () => store.items?.transactions ?? store.items ?? []
+);
 
 // ensure store has data (harmless if already loaded)
 onMounted(() => {
@@ -111,13 +139,18 @@ function handleSortClick(col) {
 
 function sortIcon(col) {
   const icons = { asc: "↑", desc: "↓", none: "⬍" };
-  if (sortState.value.column === col) return icons[sortState.value.order] || icons.none;
+  if (sortState.value.column === col)
+    return icons[sortState.value.order] || icons.none;
   return icons.none;
 }
 
-watch(activeFilters, () => {
-  currentPage.value = 1;
-}, { deep: true });
+watch(
+  activeFilters,
+  () => {
+    currentPage.value = 1;
+  },
+  { deep: true }
+);
 
 // processedList: apply filters to whole dataset (reduces whole data)
 const processedList = computed(() => {
@@ -140,13 +173,18 @@ const processedList = computed(() => {
   if (sortState.value.column && sortState.value.order) {
     const dir = sortState.value.order === "asc" ? 1 : -1;
     if (sortState.value.column === "date") {
-      list.sort((a, b) => dir * (new Date(a.date + "T00:00:00") - new Date(b.date + "T00:00:00")));
+      list.sort(
+        (a, b) =>
+          dir *
+          (new Date(a.date + "T00:00:00") - new Date(b.date + "T00:00:00"))
+      );
     } else if (sortState.value.column === "amount") {
       list.sort((a, b) => dir * (Number(a.amount) - Number(b.amount)));
     }
   } else {
     list.sort((a, b) => {
-      const ida = Number(a.id), idb = Number(b.id);
+      const ida = Number(a.id),
+        idb = Number(b.id);
       if (!Number.isNaN(ida) && !Number.isNaN(idb)) return idb - ida;
       return 0;
     });
@@ -156,11 +194,14 @@ const processedList = computed(() => {
 });
 
 const totalItems = computed(() => processedList.value.length);
-const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / ITEMS_PER_PAGE) || 1));
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(totalItems.value / ITEMS_PER_PAGE) || 1)
+);
 
 // clamp currentPage whenever processedList or totalPages change to avoid empty pages
 watch([processedList, totalPages], () => {
-  if (currentPage.value > totalPages.value) currentPage.value = totalPages.value || 1;
+  if (currentPage.value > totalPages.value)
+    currentPage.value = totalPages.value || 1;
 });
 
 // paginatedList uses processedList (no change needed if already using it)
@@ -172,8 +213,12 @@ const paginatedList = computed(() => {
 function setPage(p) {
   currentPage.value = Math.min(Math.max(1, p), totalPages.value);
 }
-function prevPage() { if (currentPage.value > 1) currentPage.value--; }
-function nextPage() { if (currentPage.value < totalPages.value) currentPage.value++; }
+function prevPage() {
+  if (currentPage.value > 1) currentPage.value--;
+}
+function nextPage() {
+  if (currentPage.value < totalPages.value) currentPage.value++;
+}
 
 // page buttons with ellipsis (keeps your original UX)
 const pageButtons = computed(() => {

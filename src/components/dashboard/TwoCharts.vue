@@ -15,23 +15,31 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount, computed } from "vue";
-import { useFinanceStore } from "../../stores/finance";
-
-// Chart.js v4 proper imports
+import {
+  ref,
+  watch,
+  onMounted,
+  onBeforeUnmount,
+  computed,
+  inject,
+  nextTick,
+} from "vue";
 import { Chart, registerables } from "chart.js";
 Chart.register(...registerables);
 
-const store = useFinanceStore();
-
-// canvas references
+// canvas refs
 const pieRef = ref(null);
 let pieChart = null;
-
 const lineRef = ref(null);
 let lineChart = null;
 
-// ===== Chart Colors =====
+// inject processedList (provided from parent). fallback to an empty ref
+const injectedProcessedList = inject("processedList", ref([]));
+const safeList = computed(() =>
+  Array.isArray(injectedProcessedList?.value) ? injectedProcessedList.value : []
+);
+
+// === helpers (unchanged) ===
 function getColors() {
   const isDark = document.body.classList.contains("dark");
   return {
@@ -42,24 +50,27 @@ function getColors() {
     balance: "#2563eb",
   };
 }
-
-// ===== Helpers =====
+function normalizeDate(raw) {
+  if (raw === null || raw === undefined) return null;
+  if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw;
+  const d = new Date(String(raw) + "T00:00:00");
+  return isNaN(d.getTime()) ? null : d;
+}
 function buildMonthly(transactions = []) {
   const monthly = {};
   transactions.forEach((t) => {
-    const month = (t.date || "").slice(0, 7);
-    if (!month) return;
+    const td = normalizeDate(t.date);
+    if (!td) return;
+    const month =
+      td.getFullYear() + "-" + String(td.getMonth() + 1).padStart(2, "0");
     if (!monthly[month]) monthly[month] = { income: 0, expense: 0 };
-
-    monthly[month][t.type === "income" ? "income" : "expense"] += Number(
-      t.amount || 0
-    );
+    const key = t.type === "income" ? "income" : "expense";
+    monthly[month][key] += Number(t.amount || 0);
   });
 
   const months = Object.keys(monthly).sort();
   const incomeData = months.map((m) => monthly[m].income);
   const expenseData = months.map((m) => monthly[m].expense);
-
   const balanceData = months.map(
     (m, i) =>
       incomeData.slice(0, i + 1).reduce((s, x) => s + x, 0) -
@@ -69,6 +80,7 @@ function buildMonthly(transactions = []) {
   return { months, incomeData, expenseData, balanceData };
 }
 
+// destroy existing charts
 function destroyCharts() {
   if (pieChart) {
     try {
@@ -84,10 +96,9 @@ function destroyCharts() {
   }
 }
 
-// ===== PIE CHART =====
+// render pie & line (unchanged, they read passed transactions)
 function renderPieChart(transactions) {
   const colors = getColors();
-
   const catTotals = {};
   transactions
     .filter((t) => t.type === "expense")
@@ -131,9 +142,9 @@ function renderPieChart(transactions) {
               const pct = total
                 ? ((ctx.parsed / total) * 100).toFixed(1)
                 : "0.0";
-              return `${ctx.label}: ₹${
-                ctx.parsed?.toLocaleString() ?? 0
-              } (${pct}%)`;
+              return `${ctx.label}: ₹${(
+                ctx.parsed || 0
+              ).toLocaleString()} (${pct}%)`;
             },
           },
           titleColor: colors.text,
@@ -147,15 +158,12 @@ function renderPieChart(transactions) {
           displayColors: true,
         },
       },
-      // ensure canvas uses our colors for accessibility
     },
   });
 }
 
-// ===== LINE CHART =====
 function renderLineChart(transactions) {
   const colors = getColors();
-
   const { months, balanceData } = buildMonthly(transactions);
 
   if (!lineRef.value) return;
@@ -184,8 +192,8 @@ function renderLineChart(transactions) {
           usePointStyle: true,
           callbacks: {
             label(ctx) {
-              const val = ctx.parsed?.y ?? 0;
-              return `₹${val.toLocaleString()}`;
+              const val = ctx.parsed?.y ?? ctx.parsed ?? 0;
+              return `₹${Number(val).toLocaleString()}`;
             },
           },
           titleColor: colors.text,
@@ -207,44 +215,43 @@ function renderLineChart(transactions) {
   });
 }
 
-// ===== MASTER RENDER =====
 function renderCharts(transactions = []) {
-  // destroy then re-create so Chart.js picks up fresh colors
   destroyCharts();
   renderPieChart(transactions);
   renderLineChart(transactions);
 }
 
-// ===== Reactive Transactions =====
-const transactions = computed(() => store.items?.transactions ?? []);
+// ===== WATCHERS =====
+// watch the injected processed list
+const stopProcessedWatch = watch(
+  safeList,
+  (newVal, oldVal) => {
+    if (newVal === oldVal) return;
+    renderCharts(newVal ?? []);
+  },
+  { immediate: true, deep: false, flush: "post" }
+);
 
-// Reload charts on data change
-watch(transactions, (newTx) => renderCharts(newTx ?? []), { deep: true });
-
-// React to dark/light mode (from any tab) and explicit theme-changed event
+// theme / storage listeners
 function onStorage(e) {
-  if (e.key === "financeData") {
-    renderCharts(transactions.value ?? []);
-  }
-  if (e.key === "theme") {
-    // if you use storage-based theme, re-render charts
-    renderCharts(transactions.value ?? []);
+  if (e.key === "financeData" || e.key === "theme") {
+    renderCharts(safeList.value ?? []);
   }
 }
-
-// explicit custom event from same-tab toggles (recommended from HeaderBar)
 function onThemeChanged() {
-  renderCharts(transactions.value ?? []);
+  renderCharts(safeList.value ?? []);
 }
 
 onMounted(() => {
-  renderCharts(transactions.value ?? []);
+  // initial render after any microtasks settle
+  nextTick().then(() => renderCharts(safeList.value ?? []));
   window.addEventListener("storage", onStorage);
   window.addEventListener("theme-changed", onThemeChanged);
 });
 
 onBeforeUnmount(() => {
   destroyCharts();
+  stopProcessedWatch();
   window.removeEventListener("storage", onStorage);
   window.removeEventListener("theme-changed", onThemeChanged);
 });
@@ -253,26 +260,19 @@ onBeforeUnmount(() => {
 <style scoped>
 .chart-row {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* two equal columns */
-  gap: 20px; /* spacing between the two boxes */
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
   margin-top: 10px;
 }
-
-/* Each chart box */
 .chart-row > div {
-  padding: 20px; /* equal padding */
-  /* background: var(--card-bg, #fff); */
+  padding: 20px;
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
-
-/* Ensure canvas scales properly */
 canvas {
   width: 100% !important;
-  height: 350px !important; /* same height for both charts */
+  height: 350px !important;
 }
-
-/* Responsive: stack on smaller screens */
 @media (max-width: 900px) {
   .chart-row {
     grid-template-columns: 1fr;

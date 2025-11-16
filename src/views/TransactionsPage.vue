@@ -2,7 +2,7 @@
   <div class="container">
     <ControlBar
       ref="controlBarRef"
-      @filter-change-from-controlbar="filters = $event"
+      @filter-change-from-controlbar="onControlBarFilters"
       @open-add="openAdd"
     />
 
@@ -14,9 +14,9 @@
 import { ref, onMounted } from "vue";
 import ControlBar from "../components/ControlBar.vue";
 import TransactionTable from "../components/TransactionTable.vue";
-// AddTransaction is inside ControlBar now, so we DON'T import it here
-
 import { useFinanceStore } from "../stores/finance";
+
+const emit = defineEmits(["filter-change-from-controlbar"]); // ADDED: re-emit upward
 
 const store = useFinanceStore();
 const filters = ref({ start: null, end: null, category: "" });
@@ -44,5 +44,17 @@ function deleteTx(id) {
   const ok = confirm("Delete this transaction?");
   if (!ok) return;
   store.deleteTransaction(id);
+}
+
+// ADDED: handler to receive filters from ControlBar, update local state,
+// and re-emit the change up to App.vue
+function onControlBarFilters(newFilters) {
+  // normalize / protect: always store a fresh object
+  filters.value = {
+    ...(newFilters || { start: null, end: null, category: "" }),
+  };
+
+  // re-emit for App.vue to pick up (router-view listens to this)
+  emit("filter-change-from-controlbar", { ...filters.value });
 }
 </script>

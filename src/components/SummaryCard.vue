@@ -20,16 +20,15 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from "vue";
-import { useFinanceStore } from "../stores/finance";
+import { computed, inject } from "vue";
 
-const store = useFinanceStore();
+// inject the processedList computed (provided from App.vue)
+const processedList = inject("processedList");
 
-// onMounted(() => {
-//   if (typeof store.loadData === "function") store.loadData();
-// });
+// defensive fallback: empty array if not provided
+const safeList = computed(() => (processedList ? processedList.value : []));
 
-// formatting
+// formatting helper (same as you had)
 function formatNum(n) {
   const neg = n < 0;
   const abs = Math.abs(n);
@@ -40,9 +39,7 @@ function formatNum(n) {
   return (neg ? "-" : "") + formatted;
 }
 
-//  totals
 function calcTotals(list = []) {
-  list = Array.isArray(list) ? list : [];
   const totalIncome = list
     .filter((t) => t.type === "income")
     .reduce((s, x) => s + Number(x.amount || 0), 0);
@@ -55,9 +52,9 @@ function calcTotals(list = []) {
   return { totalIncome, totalExpense, incomeLeft, expenseRatio };
 }
 
+// summary computed based on safeList
 const summary = computed(() => {
-  const tx = store.items?.transactions ?? store.items ?? [];
-  const s = calcTotals(tx);
+  const s = calcTotals(safeList.value);
   return {
     income: formatNum(s.totalIncome),
     expense: formatNum(s.totalExpense),
