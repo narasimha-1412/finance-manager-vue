@@ -1,6 +1,5 @@
-// src/stores/finance.js
 import { defineStore } from "pinia";
-import seedData from "../assets/data.json"; // ← local seed
+import seedData from "../assets/data.json";
 
 const LS_KEY = "financeData";
 

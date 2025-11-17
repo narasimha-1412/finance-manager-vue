@@ -23,20 +23,20 @@ import {
   onBeforeUnmount,
   watch,
   computed,
-  inject,
   nextTick,
 } from "vue";
 import { Chart, registerables } from "chart.js";
+import { useFinanceStore } from "@/stores/finance";
 
 Chart.register(...registerables);
 
 const canvasRef = ref(null);
 let barChart = null;
+const store = useFinanceStore();
 
-// inject processedList (provided from parent). fallback to an empty ref
-const injectedProcessedList = inject("processedList", ref([]));
-const safeList = computed(() =>
-  Array.isArray(injectedProcessedList?.value) ? injectedProcessedList.value : []
+// derive transactions from store (same pattern as SummaryCard/Insights)
+const transactions = computed(
+  () => store.items?.transactions ?? store.items ?? []
 );
 
 // ========== COLORS BASED ON THEME ==========
@@ -53,23 +53,19 @@ function getColors() {
 // ========== DATE NORMALIZER ==========
 function normalizeDate(raw) {
   if (raw === null || raw === undefined) return null;
-  if (raw instanceof Date) {
-    return isNaN(raw.getTime()) ? null : raw;
-  }
+  if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw;
   const d = new Date(String(raw) + "T00:00:00");
   return isNaN(d.getTime()) ? null : d;
 }
 
 // ========== BUILD MONTHLY DATA ==========
-function buildMonthly(transactions = []) {
+function buildMonthly(txns = []) {
   const monthly = {};
-
-  transactions.forEach((t) => {
+  txns.forEach((t) => {
     const td = normalizeDate(t.date);
     if (!td) return;
     const month =
       td.getFullYear() + "-" + String(td.getMonth() + 1).padStart(2, "0");
-
     if (!monthly[month]) monthly[month] = { income: 0, expense: 0 };
     const key = t.type === "income" ? "income" : "expense";
     monthly[month][key] += Number(t.amount || 0);
@@ -78,7 +74,6 @@ function buildMonthly(transactions = []) {
   const months = Object.keys(monthly).sort();
   const incomeData = months.map((m) => monthly[m].income);
   const expenseData = months.map((m) => monthly[m].expense);
-
   return { months, incomeData, expenseData };
 }
 
@@ -88,19 +83,17 @@ function destroyChart() {
     try {
       barChart.destroy();
     } catch (e) {
-      // ignore
+      /* ignore */
     }
     barChart = null;
   }
 }
 
 // ========== RENDER CHART ==========
-function renderCharts(transactions = []) {
+function renderCharts(txns = []) {
   destroyChart();
-
   const colors = getColors();
-  const { months, incomeData, expenseData } = buildMonthly(transactions);
-
+  const { months, incomeData, expenseData } = buildMonthly(txns);
   if (!canvasRef.value) return;
   const ctx = canvasRef.value.getContext("2d");
   if (!ctx) return;
@@ -163,13 +156,13 @@ function renderCharts(transactions = []) {
 
 // computed flag for UI overlay
 const noData = computed(() => {
-  const { months } = buildMonthly(safeList.value ?? []);
+  const { months } = buildMonthly(transactions.value ?? []);
   return !months || months.length === 0;
 });
 
-// Auto re-render when injected processed list changes
-const stopProcessedWatch = watch(
-  safeList,
+// re-run when store transactions change
+const stopTxWatch = watch(
+  transactions,
   (newVal, oldVal) => {
     if (newVal === oldVal) return;
     renderCharts(newVal ?? []);
@@ -179,26 +172,24 @@ const stopProcessedWatch = watch(
 
 // ========== THEME + STORAGE EVENTS ==========
 function onStorage(e) {
-  if (e.key === "financeData" || e.key === "theme") {
-    renderCharts(safeList.value ?? []);
-  }
+  if (e.key === "financeData" || e.key === "theme")
+    renderCharts(transactions.value ?? []);
 }
 
 function onThemeChanged() {
-  renderCharts(safeList.value ?? []);
+  renderCharts(transactions.value ?? []);
 }
 
-// ========== MOUNT ==========
+// ========== MOUNT / UNMOUNT ==========
 onMounted(() => {
-  // initial render after microtasks settle
-  nextTick().then(() => renderCharts(safeList.value ?? []));
+  nextTick().then(() => renderCharts(transactions.value ?? []));
   window.addEventListener("storage", onStorage);
   window.addEventListener("theme-changed", onThemeChanged);
 });
 
 onBeforeUnmount(() => {
   destroyChart();
-  stopProcessedWatch();
+  stopTxWatch();
   window.removeEventListener("storage", onStorage);
   window.removeEventListener("theme-changed", onThemeChanged);
 });

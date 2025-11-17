@@ -8,25 +8,23 @@
 </template>
 
 <script setup>
-import { ref, defineExpose } from "vue";
+import { ref } from "vue";
 import FilterTransactions from "./controls/FilterTransactions.vue";
 import AddTransaction from "./controls/AddTransaction.vue";
 
-const emit = defineEmits(['open-add','filter-change-from-controlbar']);
+const emit = defineEmits(["open-add", "filter-change-from-controlbar"]);
 
 // ref to internal modal
 const addRef = ref(null);
 
-function openAdd() {
-  // open modal inside this component
+function openAdd({ fromParent = false } = {}) {
   addRef.value?.openAdd();
-  // still emit to parent if parent wants to know
-  emit('open-add');
+  if (!fromParent) emit("open-add");
 }
 
 // forward filter payload upward
 function forwardFilter(payload) {
-  emit('filter-change-from-controlbar', payload);
+  emit("filter-change-from-controlbar", payload);
 }
 
 // expose functions so parent can trigger edit (TransactionsPage can call controlBarRef.value.openEdit(tx))
@@ -36,3 +34,14 @@ function openEdit(tx) {
 
 defineExpose({ openEdit, openAdd });
 </script>
+
+<style scoped lang="scss">
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0px 0px 13px 0px;
+}
+</style>

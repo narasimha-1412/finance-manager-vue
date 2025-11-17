@@ -1,9 +1,7 @@
 <template>
-  <div class="container">
-    <InsightsDashboard/>
-    <BarChart/>
-    <TwoCharts/>
-  </div>
+  <InsightsDashboard />
+  <BarChart />
+  <TwoCharts />
 </template>
 
 <script setup>
@@ -20,5 +18,4 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

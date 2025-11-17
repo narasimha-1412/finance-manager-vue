@@ -18,6 +18,96 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted, watch } from "vue";
+import { useFinanceStore } from "../../stores/finance.js";
+
+const store = useFinanceStore();
+
+const topCategory = ref("-");
+const insightSavings = ref("0");
+const totalTransactions = ref(0);
+
+function formatNum(n) {
+  const neg = n < 0;
+  const abs = Math.abs(n);
+  const formatted = Number(abs).toLocaleString(undefined, {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: abs % 1 ? 2 : 0,
+  });
+  return (neg ? "-" : "") + formatted;
+}
+
+function renderSummary(transactions = []) {
+  const totalIncome = transactions
+    .filter((t) => t.type === "income")
+    .reduce((s, t) => s + Number(t.amount || 0), 0);
+
+  const totalExpense = transactions
+    .filter((t) => t.type === "expense")
+    .reduce((s, t) => s + Number(t.amount || 0), 0);
+
+  const net = totalIncome - totalExpense;
+  // group by month (YYYY-MM)
+  const monthMap = {};
+
+  transactions.forEach((t) => {
+    const d = new Date(t.date + "T00:00:00");
+    if (isNaN(d)) return;
+
+    const key =
+      d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+
+    if (!monthMap[key]) {
+      monthMap[key] = { income: 0, expense: 0 };
+    }
+
+    if (t.type === "income") monthMap[key].income += Number(t.amount || 0);
+    else if (t.type === "expense")
+      monthMap[key].expense += Number(t.amount || 0);
+  });
+
+  // compute monthly savings array
+  const monthlySavings = Object.values(monthMap).map(
+    (m) => m.income - m.expense
+  );
+
+  // actual monthly average saving
+  const avgSave =
+    monthlySavings.length > 0
+      ? Math.round(
+          monthlySavings.reduce((s, x) => s + x, 0) / monthlySavings.length
+        )
+      : 0;
+
+  insightSavings.value = formatNum(avgSave);
+
+  insightSavings.value = formatNum(avgSave);
+  totalTransactions.value = transactions.length;
+
+  // highest expense category
+  const catTotals = {};
+  transactions
+    .filter((t) => t.type === "expense")
+    .forEach((t) => {
+      catTotals[t.category] =
+        (catTotals[t.category] || 0) + Number(t.amount || 0);
+    });
+  const top = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
+  topCategory.value = top ? top[0] : "-";
+}
+
+const transactions = computed(() => {
+  return store.items?.transactions ?? store.items ?? [];
+});
+
+onMounted(() => {
+  if (typeof store.loadData === "function") store.loadData();
+  renderSummary(transactions.value);
+});
+
+watch(transactions, (newTx) => renderSummary(newTx), { immediate: true });
+</script>
+<!-- <script setup>
 import {
   ref,
   computed,
@@ -218,4 +308,34 @@ onMounted(() => {
     window.removeEventListener("storage", onStorage);
   });
 });
-</script>
+</script> -->
+
+<style scoped lang="scss">
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 260px);
+  gap: 14px;
+  justify-content: center;
+  margin-top: 24px;
+
+  .card {
+    background: var(--card);
+    padding: 18px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+
+    .label {
+      font-size: 0.9rem;
+      margin: 0;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    h2 {
+      margin: 8px 0 0;
+      font-size: 1.35rem;
+      color: var(--primary);
+    }
+  }
+}
+</style>

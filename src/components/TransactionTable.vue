@@ -25,7 +25,8 @@
           </tr>
         </thead>
 
-        <tbody>
+        <!-- make tbody scrollable while still rendering all paginated rows -->
+        <tbody class="scroll-body">
           <tr v-for="t in paginatedList" :key="t.id">
             <td>{{ t.date }}</td>
             <td v-html="escapeHtml(t.description || '-')"></td>
@@ -33,7 +34,6 @@
             <td>{{ t.type === "income" ? "Credit" : "Expense" }}</td>
             <td>₹{{ formatNum(Number(t.amount)) }}</td>
             <td class="center actions">
-              <!-- use emit defined in script -->
               <button class="edit" @click="emitEdit(t.id)">Edit</button>
               <button class="delete" @click="emitDelete(t.id)">Delete</button>
             </td>
@@ -42,7 +42,6 @@
       </table>
     </div>
 
-    <!-- Pagination Controls -->
     <div class="pagination" v-show="totalItems > 0">
       <button
         class="btn page-arrow"
@@ -85,10 +84,7 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useFinanceStore } from "../stores/finance";
 
-// declare emits so parent can listen
 const emit = defineEmits(["edit", "delete"]);
-
-// small helpers to forward template clicks (keeps template clean)
 function emitEdit(id) {
   emit("edit", id);
 }
@@ -96,7 +92,6 @@ function emitDelete(id) {
   emit("delete", id);
 }
 
-// props for filters
 const props = defineProps({
   filters: {
     type: Object,
@@ -105,7 +100,6 @@ const props = defineProps({
 });
 
 const store = useFinanceStore();
-
 const ITEMS_PER_PAGE = 10;
 const currentPage = ref(1);
 const sortState = ref({ column: null, order: null });
@@ -113,17 +107,14 @@ const activeFilters = computed(
   () => props.filters ?? { start: null, end: null, category: "" }
 );
 
-// safe transactions (support either store.items.transactions or store.items)
 const transactions = computed(
   () => store.items?.transactions ?? store.items ?? []
 );
 
-// ensure store has data (harmless if already loaded)
 onMounted(() => {
   if (typeof store.loadData === "function") store.loadData();
 });
 
-// --- sorting logic ---
 function handleSortClick(col) {
   if (sortState.value.column !== col) {
     sortState.value = { column: col, order: "asc" };
@@ -152,15 +143,12 @@ watch(
   { deep: true }
 );
 
-// processedList: apply filters to whole dataset (reduces whole data)
 const processedList = computed(() => {
   let list = Array.isArray(transactions.value) ? [...transactions.value] : [];
-
   const s = activeFilters.value.start;
   const e = activeFilters.value.end;
   const cat = activeFilters.value.category;
 
-  // apply filters to entire list
   list = list.filter((t) => {
     const d = new Date(t.date + "T00:00:00");
     if (s && d < s) return false;
@@ -169,7 +157,6 @@ const processedList = computed(() => {
     return true;
   });
 
-  // existing sorting logic (keep it)
   if (sortState.value.column && sortState.value.order) {
     const dir = sortState.value.order === "asc" ? 1 : -1;
     if (sortState.value.column === "date") {
@@ -198,13 +185,11 @@ const totalPages = computed(() =>
   Math.max(1, Math.ceil(totalItems.value / ITEMS_PER_PAGE) || 1)
 );
 
-// clamp currentPage whenever processedList or totalPages change to avoid empty pages
 watch([processedList, totalPages], () => {
   if (currentPage.value > totalPages.value)
     currentPage.value = totalPages.value || 1;
 });
 
-// paginatedList uses processedList (no change needed if already using it)
 const paginatedList = computed(() => {
   const start = (currentPage.value - 1) * ITEMS_PER_PAGE;
   return processedList.value.slice(start, start + ITEMS_PER_PAGE);
@@ -220,11 +205,10 @@ function nextPage() {
   if (currentPage.value < totalPages.value) currentPage.value++;
 }
 
-// page buttons with ellipsis (keeps your original UX)
 const pageButtons = computed(() => {
-  const tp = totalPages.value;
-  const cp = currentPage.value;
-  const out = [];
+  const tp = totalPages.value,
+    cp = currentPage.value,
+    out = [];
   if (tp <= 5) {
     for (let i = 1; i <= tp; i++) out.push(i);
     return out;
@@ -241,7 +225,6 @@ const pageButtons = computed(() => {
   return out;
 });
 
-// --- helpers from your code ---
 function formatNum(n) {
   const neg = n < 0;
   const abs = Math.abs(n);
@@ -258,3 +241,113 @@ function escapeHtml(str = "") {
     .replace(/>/g, "&gt;");
 }
 </script>
+
+<style scoped lang="scss">
+.table-section {
+  padding: 18px;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+
+  h2 {
+    margin-bottom: 4px;
+    margin-top: 0px;
+  }
+
+  .table-wrap {
+    overflow: hidden; // table handles scrolling for tbody
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; // keep column widths stable when tbody is block
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(16, 24, 40, 0.04);
+      text-align: left;
+    }
+
+    td.center,
+    th.center {
+      text-align: center;
+    }
+
+    thead tr {
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+    }
+
+    /* make tbody a scrollable block showing ~5 rows by default */
+    tbody.scroll-body {
+      display: block;
+      max-height: 190px; /* ~5 rows — adjust if your row height differs */
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* keep rows rendering like table rows so cells align with header */
+    tbody.scroll-body tr {
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+    }
+  }
+
+  .sort-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--muted);
+    padding: 0 6px;
+  }
+
+  .actions button {
+    margin: 0 4px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+  }
+
+  .actions .edit {
+    background: #16a34a;
+    color: #fff;
+  }
+  .actions .delete {
+    background: #ef4444;
+    color: #fff;
+  }
+
+  #no-data {
+    padding: 16px;
+    text-align: center;
+    color: var(--muted);
+  }
+}
+
+.pagination {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+
+  .page-arrow {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .active-page {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+  }
+}
+</style>

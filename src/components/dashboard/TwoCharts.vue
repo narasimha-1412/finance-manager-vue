@@ -21,25 +21,23 @@ import {
   onMounted,
   onBeforeUnmount,
   computed,
-  inject,
   nextTick,
 } from "vue";
 import { Chart, registerables } from "chart.js";
+import { useFinanceStore } from "@/stores/finance";
 Chart.register(...registerables);
 
-// canvas refs
 const pieRef = ref(null);
 let pieChart = null;
 const lineRef = ref(null);
 let lineChart = null;
 
-// inject processedList (provided from parent). fallback to an empty ref
-const injectedProcessedList = inject("processedList", ref([]));
-const safeList = computed(() =>
-  Array.isArray(injectedProcessedList?.value) ? injectedProcessedList.value : []
+const store = useFinanceStore();
+const transactions = computed(
+  () => store.items?.transactions ?? store.items ?? []
 );
 
-// === helpers (unchanged) ===
+// helpers
 function getColors() {
   const isDark = document.body.classList.contains("dark");
   return {
@@ -56,9 +54,9 @@ function normalizeDate(raw) {
   const d = new Date(String(raw) + "T00:00:00");
   return isNaN(d.getTime()) ? null : d;
 }
-function buildMonthly(transactions = []) {
+function buildMonthly(txns = []) {
   const monthly = {};
-  transactions.forEach((t) => {
+  txns.forEach((t) => {
     const td = normalizeDate(t.date);
     if (!td) return;
     const month =
@@ -80,36 +78,34 @@ function buildMonthly(transactions = []) {
   return { months, incomeData, expenseData, balanceData };
 }
 
-// destroy existing charts
+// destroy
 function destroyCharts() {
-  if (pieChart) {
+  if (pieChart)
     try {
       pieChart.destroy();
     } catch (e) {}
-    pieChart = null;
-  }
-  if (lineChart) {
+  pieChart = null;
+  if (lineChart)
     try {
       lineChart.destroy();
     } catch (e) {}
-    lineChart = null;
-  }
+  lineChart = null;
 }
 
-// render pie & line (unchanged, they read passed transactions)
-function renderPieChart(transactions) {
+// renderers
+function renderPieChart(txns) {
   const colors = getColors();
   const catTotals = {};
-  transactions
+  txns
     .filter((t) => t.type === "expense")
-    .forEach((t) => {
-      catTotals[t.category] =
-        (catTotals[t.category] || 0) + Number(t.amount || 0);
-    });
+    .forEach(
+      (t) =>
+        (catTotals[t.category] =
+          (catTotals[t.category] || 0) + Number(t.amount || 0))
+    );
 
   const labels = Object.keys(catTotals);
   const values = Object.values(catTotals);
-
   if (!pieRef.value) return;
 
   pieChart = new Chart(pieRef.value.getContext("2d"), {
@@ -162,10 +158,9 @@ function renderPieChart(transactions) {
   });
 }
 
-function renderLineChart(transactions) {
+function renderLineChart(txns) {
   const colors = getColors();
-  const { months, balanceData } = buildMonthly(transactions);
-
+  const { months, balanceData } = buildMonthly(txns);
   if (!lineRef.value) return;
 
   lineChart = new Chart(lineRef.value.getContext("2d"), {
@@ -215,16 +210,15 @@ function renderLineChart(transactions) {
   });
 }
 
-function renderCharts(transactions = []) {
+function renderCharts(txns = []) {
   destroyCharts();
-  renderPieChart(transactions);
-  renderLineChart(transactions);
+  renderPieChart(txns);
+  renderLineChart(txns);
 }
 
-// ===== WATCHERS =====
-// watch the injected processed list
-const stopProcessedWatch = watch(
-  safeList,
+// watch store transactions
+const stopTxWatch = watch(
+  transactions,
   (newVal, oldVal) => {
     if (newVal === oldVal) return;
     renderCharts(newVal ?? []);
@@ -232,26 +226,24 @@ const stopProcessedWatch = watch(
   { immediate: true, deep: false, flush: "post" }
 );
 
-// theme / storage listeners
+// listeners
 function onStorage(e) {
-  if (e.key === "financeData" || e.key === "theme") {
-    renderCharts(safeList.value ?? []);
-  }
+  if (e.key === "financeData" || e.key === "theme")
+    renderCharts(transactions.value ?? []);
 }
 function onThemeChanged() {
-  renderCharts(safeList.value ?? []);
+  renderCharts(transactions.value ?? []);
 }
 
 onMounted(() => {
-  // initial render after any microtasks settle
-  nextTick().then(() => renderCharts(safeList.value ?? []));
+  nextTick().then(() => renderCharts(transactions.value ?? []));
   window.addEventListener("storage", onStorage);
   window.addEventListener("theme-changed", onThemeChanged);
 });
 
 onBeforeUnmount(() => {
   destroyCharts();
-  stopProcessedWatch();
+  stopTxWatch();
   window.removeEventListener("storage", onStorage);
   window.removeEventListener("theme-changed", onThemeChanged);
 });

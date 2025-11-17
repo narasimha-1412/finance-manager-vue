@@ -20,15 +20,14 @@
 </template>
 
 <script setup>
-import { computed, inject } from "vue";
+import { computed, onMounted } from "vue";
+import { useFinanceStore } from "@/stores/finance";
+const store = useFinanceStore();
 
-// inject the processedList computed (provided from App.vue)
-const processedList = inject("processedList");
+onMounted(() => {
+  if (typeof store.loadData === "function") store.loadData();
+});
 
-// defensive fallback: empty array if not provided
-const safeList = computed(() => (processedList ? processedList.value : []));
-
-// formatting helper (same as you had)
 function formatNum(n) {
   const neg = n < 0;
   const abs = Math.abs(n);
@@ -52,9 +51,9 @@ function calcTotals(list = []) {
   return { totalIncome, totalExpense, incomeLeft, expenseRatio };
 }
 
-// summary computed based on safeList
 const summary = computed(() => {
-  const s = calcTotals(safeList.value);
+  const tx = store.items?.transactions ?? store.items ?? [];
+  const s = calcTotals(tx);
   return {
     income: formatNum(s.totalIncome),
     expense: formatNum(s.totalExpense),
@@ -63,3 +62,34 @@ const summary = computed(() => {
   };
 });
 </script>
+
+<style scoped lang="scss">
+.summary {
+  display: grid;
+  margin-bottom: 18px;
+  grid-template-columns: repeat(auto-fit, 260px);
+  gap: 14px;
+  margin-bottom: 18px;
+  justify-content: center;
+
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: var(--shadow);
+
+    .label {
+      font-size: 0.9rem;
+      margin: 0;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    h2 {
+      margin: 8px 0 0;
+      font-size: 1.35rem;
+      color: var(--primary);
+    }
+  }
+}
+</style>
