@@ -3,7 +3,7 @@
     <NavBar />
     <SummaryCard />
 
-    <router-view @filter-change-from-controlbar="filters = $event" />
+    <router-view />
   </div>
 </template>
 
@@ -18,3 +18,11 @@ onMounted(() => {
   if (typeof store.loadData === "function") store.loadData();
 });
 </script>
+
+<style lang="scss" scoped>
+.container {
+  max-width: 1100px;
+  margin: 24px auto;
+  padding-top: 51px;
+}
+</style>

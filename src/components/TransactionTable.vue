@@ -25,7 +25,6 @@
           </tr>
         </thead>
 
-        <!-- make tbody scrollable while still rendering all paginated rows -->
         <tbody class="scroll-body">
           <tr v-for="t in paginatedList" :key="t.id">
             <td>{{ t.date }}</td>
@@ -76,12 +75,12 @@
       </button>
     </div>
 
-    <p id="no-data" v-if="totalItems === 0">No transactions yet. Add one!</p>
+    <p id="no-data" v-if="totalItems === 0">No transactions</p>
   </section>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed } from "vue";
 import { useFinanceStore } from "../stores/finance";
 
 const emit = defineEmits(["edit", "delete"]);
@@ -103,17 +102,16 @@ const store = useFinanceStore();
 const ITEMS_PER_PAGE = 10;
 const currentPage = ref(1);
 const sortState = ref({ column: null, order: null });
-const activeFilters = computed(
-  () => props.filters ?? { start: null, end: null, category: "" }
-);
-
-const transactions = computed(
-  () => store.items?.transactions ?? store.items ?? []
-);
-
-onMounted(() => {
-  if (typeof store.loadData === "function") store.loadData();
+const activeFilters = computed(() => {
+  if (props.filters !== null && props.filters !== undefined) {
+    currentPage.value = 1;
+    return props.filters;
+  } else {
+    return { start: null, end: null, category: "" };
+  }
 });
+
+const transactions = computed(() => store.transactions ?? []);
 
 function handleSortClick(col) {
   if (sortState.value.column !== col) {
@@ -125,7 +123,6 @@ function handleSortClick(col) {
   } else {
     sortState.value.order = "asc";
   }
-  currentPage.value = 1;
 }
 
 function sortIcon(col) {
@@ -134,14 +131,6 @@ function sortIcon(col) {
     return icons[sortState.value.order] || icons.none;
   return icons.none;
 }
-
-watch(
-  activeFilters,
-  () => {
-    currentPage.value = 1;
-  },
-  { deep: true }
-);
 
 const processedList = computed(() => {
   let list = Array.isArray(transactions.value) ? [...transactions.value] : [];
@@ -184,11 +173,6 @@ const totalItems = computed(() => processedList.value.length);
 const totalPages = computed(() =>
   Math.max(1, Math.ceil(totalItems.value / ITEMS_PER_PAGE) || 1)
 );
-
-watch([processedList, totalPages], () => {
-  if (currentPage.value > totalPages.value)
-    currentPage.value = totalPages.value || 1;
-});
 
 const paginatedList = computed(() => {
   const start = (currentPage.value - 1) * ITEMS_PER_PAGE;
@@ -244,29 +228,29 @@ function escapeHtml(str = "") {
 
 <style scoped lang="scss">
 .table-section {
-  padding: 18px;
-  border-radius: 12px;
-  background: var(--card);
-  box-shadow: var(--shadow);
+  padding: 1.125rem;
+  border-radius: 0.75rem;
+  background: $card;
+  box-shadow: $shadow;
 
   h2 {
-    margin-bottom: 4px;
-    margin-top: 0px;
+    margin-bottom: 0.25rem;
+    margin-top: 0;
   }
 
   .table-wrap {
-    overflow: hidden; // table handles scrolling for tbody
+    overflow: hidden;
   }
 
   table {
     width: 100%;
     border-collapse: collapse;
-    table-layout: fixed; // keep column widths stable when tbody is block
+    table-layout: fixed;
 
     th,
     td {
-      padding: 10px 12px;
-      border-bottom: 1px solid rgba(16, 24, 40, 0.04);
+      padding: 0.625rem 0.75rem;
+      border-bottom: 0.0625rem solid rgba(16, 24, 40, 0.04);
       text-align: left;
     }
 
@@ -281,15 +265,13 @@ function escapeHtml(str = "") {
       table-layout: fixed;
     }
 
-    /* make tbody a scrollable block showing ~5 rows by default */
     tbody.scroll-body {
       display: block;
-      max-height: 190px; /* ~5 rows — adjust if your row height differs */
+      max-height: 11.875rem;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
 
-    /* keep rows rendering like table rows so cells align with header */
     tbody.scroll-body tr {
       display: table;
       width: 100%;
@@ -302,14 +284,19 @@ function escapeHtml(str = "") {
     border: none;
     cursor: pointer;
     font-size: 1.1rem;
-    color: var(--muted);
-    padding: 0 6px;
+    color: $muted;
+    padding: 0 0.375rem;
+    transition: color 0.2s;
+
+    &:hover {
+      color: $accent;
+    }
   }
 
   .actions button {
-    margin: 0 4px;
-    padding: 6px 8px;
-    border-radius: 6px;
+    margin: 0 0.25rem;
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.375rem;
     border: none;
     cursor: pointer;
   }
@@ -324,30 +311,47 @@ function escapeHtml(str = "") {
   }
 
   #no-data {
-    padding: 16px;
+    padding: 1rem;
     text-align: center;
-    color: var(--muted);
+    color: $muted;
   }
 }
 
 .pagination {
   display: flex;
-  gap: 8px;
+  gap: 0.5rem;
   justify-content: center;
-  margin-top: 16px;
+  margin-top: 1rem;
 
   .page-arrow {
-    width: 34px;
-    height: 34px;
+    width: 2.125rem;
+    height: 2.125rem;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+
+    &:hover:not(:disabled) {
+      background: $primary;
+      color: #fff;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
   }
+
   .active-page {
-    background: var(--primary);
+    background: $primary;
     color: #fff;
     border: none;
+  }
+
+  button {
+    padding: 0.375rem 0.625rem;
+    border-radius: 0.375rem;
+    border-color: $card;
   }
 }
 </style>

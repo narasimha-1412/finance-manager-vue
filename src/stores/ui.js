@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 
-export const useThemeStore = defineStore("theme", {
+export const useUiStore = defineStore("theme", {
   state: () => ({
     theme: localStorage.getItem("theme") || "light",
   }),
@@ -17,11 +17,6 @@ export const useThemeStore = defineStore("theme", {
       this.applyTheme();
     },
 
-    setTheme(value) {
-      this.theme = value === "dark" ? "dark" : "light";
-      this.applyTheme();
-    },
-
     applyTheme() {
       localStorage.setItem("theme", this.theme);
 
@@ -32,6 +27,4 @@ export const useThemeStore = defineStore("theme", {
       );
     },
   },
-
-  persist: false,
 });

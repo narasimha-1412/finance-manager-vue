@@ -50,19 +50,16 @@ import { ref } from "vue";
 const emit = defineEmits(["filter-change"]);
 const showFilter = ref(false);
 
-// filter state (same as your original)
 const filters = ref({
   start: null,
   end: null,
   category: "",
 });
 
-// input refs
 const filterStart = ref("");
 const filterEnd = ref("");
 const filterCategory = ref("");
 
-// open / close modal
 function openFilter() {
   showFilter.value = true;
 }
@@ -70,12 +67,10 @@ function closeFilter() {
   showFilter.value = false;
 }
 
-// clicking outside modal
 function backdropClose(e) {
   if (e.target.classList.contains("modal")) closeFilter();
 }
 
-// apply filters (replace with emit if parent handles filtering)
 function applyFilters() {
   const payload = {
     start: filterStart.value ? new Date(filterStart.value) : null,
@@ -83,15 +78,11 @@ function applyFilters() {
     category: filterCategory.value || "",
   };
 
-  // console.log("FILTER APPLIED →", payload);   // ✅ verify here
-
   emit("filter-change", payload);
   closeFilter();
 }
 
-// clear filters
 function clearFilters() {
-  // console.log("FILTER CLEARED");   // ✅ verify
   emit("filter-change", { start: null, end: null, category: "" });
   closeFilter();
 }
@@ -101,7 +92,7 @@ function clearFilters() {
 .right {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
 }
 
 .modal {
@@ -109,7 +100,7 @@ function clearFilters() {
   position: fixed;
   inset: 0;
   background: rgba(2, 6, 23, 0.45);
-  padding: 20px;
+  padding: 1.25rem;
   justify-content: center;
   align-items: center;
   &.show {
@@ -119,29 +110,29 @@ function clearFilters() {
 
 .modal-content {
   width: 100%;
-  max-width: 420px;
-  background: var(--card);
-  border-radius: 12px;
-  padding: 18px;
-  box-shadow: var(--shadow);
+  max-width: 26.25rem;
+  background: $card;
+  border-radius: 0.75rem;
+  padding: 1.125rem;
+  box-shadow: $shadow;
 }
 
 h3 {
-  margin-bottom: 12px;
+  margin-bottom: 0.75rem;
 }
 
 label {
   display: block;
-  margin: 8px 0 6px;
+  margin: 0.5rem 0 0.375rem;
   font-weight: 600;
 }
 
 input[type="date"],
 select {
   width: 100%;
-  padding: 9px;
-  border-radius: 8px;
-  border: 1px solid #000;
+  padding: 0.5625rem;
+  border-radius: 0.5rem;
+  border: 0.0625rem solid #000;
   background: transparent;
   box-sizing: border-box;
 }
@@ -149,7 +140,7 @@ select {
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
 }
 </style>

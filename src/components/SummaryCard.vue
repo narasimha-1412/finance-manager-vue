@@ -24,10 +24,6 @@ import { computed, onMounted } from "vue";
 import { useFinanceStore } from "@/stores/finance";
 const store = useFinanceStore();
 
-onMounted(() => {
-  if (typeof store.loadData === "function") store.loadData();
-});
-
 function formatNum(n) {
   const neg = n < 0;
   const abs = Math.abs(n);
@@ -52,7 +48,7 @@ function calcTotals(list = []) {
 }
 
 const summary = computed(() => {
-  const tx = store.items?.transactions ?? store.items ?? [];
+  const tx = store.transactions ?? [];
   const s = calcTotals(tx);
   return {
     income: formatNum(s.totalIncome),
@@ -66,29 +62,27 @@ const summary = computed(() => {
 <style scoped lang="scss">
 .summary {
   display: grid;
-  margin-bottom: 18px;
-  grid-template-columns: repeat(auto-fit, 260px);
-  gap: 14px;
-  margin-bottom: 18px;
-  justify-content: center;
+  margin-bottom: 1.125rem;
+  grid-template-columns: auto auto auto auto;
+  gap: 0.875rem;
 
   .card {
-    background: var(--card);
-    border-radius: 12px;
-    padding: 18px;
-    box-shadow: var(--shadow);
+    background: $card;
+    border-radius: 0.75rem;
+    padding: 1.125rem;
+    box-shadow: $shadow;
 
     .label {
       font-size: 0.9rem;
       margin: 0;
       font-weight: 600;
-      color: var(--text);
+      color: $text;
     }
 
     h2 {
-      margin: 8px 0 0;
+      margin: 0.5rem 0 0;
       font-size: 1.35rem;
-      color: var(--primary);
+      color: $primary;
     }
   }
 }

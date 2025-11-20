@@ -1,17 +1,8 @@
 <template>
   <section class="table-section">
-    <h2>Monthly Income vs Expense</h2>
-
-    <div class="chart-wrap">
+    <div class="card chart-wrap">
+      <h2>Monthly Income vs Expense</h2>
       <canvas ref="canvasRef" id="barChart"></canvas>
-
-      <!-- No-data overlay -->
-      <div v-if="noData" class="no-data">
-        <div class="no-data-inner">
-          <p>No data to display</p>
-          <small>Try changing the date range or category filter.</small>
-        </div>
-      </div>
     </div>
   </section>
 </template>
@@ -35,9 +26,7 @@ let barChart = null;
 const store = useFinanceStore();
 
 // derive transactions from store (same pattern as SummaryCard/Insights)
-const transactions = computed(
-  () => store.items?.transactions ?? store.items ?? []
-);
+const transactions = computed(() => store.transactions ?? []);
 
 // ========== COLORS BASED ON THEME ==========
 function getColors() {
@@ -195,9 +184,14 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .chart-wrap {
+  background: $card;
   position: relative;
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  margin-top: 1.0625rem;
+  box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.08);
 }
 
 /* No data overlay */
@@ -207,7 +201,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none; /* let interactions pass to canvas if needed */
+  pointer-events: none;
 }
 
 .no-data-inner {
@@ -215,10 +209,10 @@ onBeforeUnmount(() => {
   text-align: center;
   background: rgba(255, 255, 255, 0.92);
   color: #334155;
-  padding: 18px 22px;
-  border-radius: 10px;
-  box-shadow: 0 6px 20px rgba(16, 24, 40, 0.08);
-  transform: translateY(-6px);
+  padding: 1.125rem 1.375rem;
+  border-radius: 0.625rem;
+  box-shadow: 0 0.375rem 1.25rem rgba(16, 24, 40, 0.08);
+  transform: translateY(-0.375rem);
 }
 
 .dark .no-data-inner {
@@ -228,20 +222,20 @@ onBeforeUnmount(() => {
 }
 
 .no-data-inner p {
-  margin: 0 0 6px;
+  margin: 0 0 0.375rem;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .no-data-inner small {
   color: inherit;
   opacity: 0.8;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
-/* Canvas sizing (keeps previous rules) */
 canvas {
   width: 100% !important;
-  height: 350px !important;
+  height: 21.875rem !important;
+  cursor: crosshair;
 }
 </style>

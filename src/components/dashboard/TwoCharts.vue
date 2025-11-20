@@ -1,6 +1,6 @@
 <template>
   <section class="table-section" style="margin-top: 24px">
-    <div class="chart-row">
+    <div class="card chart-row">
       <div>
         <h2>Expense Distribution by Category</h2>
         <canvas ref="pieRef" id="pieChart"></canvas>
@@ -15,17 +15,9 @@
 </template>
 
 <script setup>
-import {
-  ref,
-  watch,
-  onMounted,
-  onBeforeUnmount,
-  computed,
-  nextTick,
-} from "vue";
-import { Chart, registerables } from "chart.js";
+import { ref, onMounted, computed } from "vue";
+import { Chart } from "chart.js";
 import { useFinanceStore } from "@/stores/finance";
-Chart.register(...registerables);
 
 const pieRef = ref(null);
 let pieChart = null;
@@ -33,11 +25,8 @@ const lineRef = ref(null);
 let lineChart = null;
 
 const store = useFinanceStore();
-const transactions = computed(
-  () => store.items?.transactions ?? store.items ?? []
-);
+const transactions = computed(() => store.transactions ?? []);
 
-// helpers
 function getColors() {
   const isDark = document.body.classList.contains("dark");
   return {
@@ -48,6 +37,7 @@ function getColors() {
     balance: "#2563eb",
   };
 }
+
 function normalizeDate(raw) {
   if (raw === null || raw === undefined) return null;
   if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw;
@@ -78,21 +68,6 @@ function buildMonthly(txns = []) {
   return { months, incomeData, expenseData, balanceData };
 }
 
-// destroy
-function destroyCharts() {
-  if (pieChart)
-    try {
-      pieChart.destroy();
-    } catch (e) {}
-  pieChart = null;
-  if (lineChart)
-    try {
-      lineChart.destroy();
-    } catch (e) {}
-  lineChart = null;
-}
-
-// renderers
 function renderPieChart(txns) {
   const colors = getColors();
   const catTotals = {};
@@ -211,60 +186,37 @@ function renderLineChart(txns) {
 }
 
 function renderCharts(txns = []) {
-  destroyCharts();
   renderPieChart(txns);
   renderLineChart(txns);
 }
 
-// watch store transactions
-const stopTxWatch = watch(
-  transactions,
-  (newVal, oldVal) => {
-    if (newVal === oldVal) return;
-    renderCharts(newVal ?? []);
-  },
-  { immediate: true, deep: false, flush: "post" }
-);
-
-// listeners
-function onStorage(e) {
-  if (e.key === "financeData" || e.key === "theme")
-    renderCharts(transactions.value ?? []);
-}
-function onThemeChanged() {
-  renderCharts(transactions.value ?? []);
-}
-
 onMounted(() => {
-  nextTick().then(() => renderCharts(transactions.value ?? []));
-  window.addEventListener("storage", onStorage);
-  window.addEventListener("theme-changed", onThemeChanged);
-});
-
-onBeforeUnmount(() => {
-  destroyCharts();
-  stopTxWatch();
-  window.removeEventListener("storage", onStorage);
-  window.removeEventListener("theme-changed", onThemeChanged);
+  renderCharts(transactions.value ?? []);
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .chart-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-  margin-top: 10px;
+  gap: 1.25rem;
+  margin-top: 0.625rem;
+  background: $card;
+  border-radius: 0.75rem;
 }
+
 .chart-row > div {
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.08);
 }
+
 canvas {
   width: 100% !important;
-  height: 350px !important;
+  height: 21.875rem !important;
+  cursor: crosshair;
 }
+
 @media (max-width: 900px) {
   .chart-row {
     grid-template-columns: 1fr;
