@@ -74,7 +74,7 @@
 </template>
 
 <script setup>
-import { ref, defineExpose } from "vue";
+import { ref } from "vue";
 import { useFinanceStore } from "../../stores/finance";
 
 const store = useFinanceStore();
