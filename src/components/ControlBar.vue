@@ -1,9 +1,15 @@
 <template>
-  <section class="controls">
+  <!-- <section class="controls">
     <button class="btn primary" @click="openAdd">+ Add Transaction</button>
     <FilterTransactions @filter-change="forwardFilter" />
     <AddTransaction ref="addRef" />
-  </section>
+  </section> -->
+
+  <div class="controls">
+    <v-btn color="primary" @click="openAdd">+ Add Transaction</v-btn>
+    <FilterTransactions @filter-change="forwardFilter" />
+    <AddTransaction ref="addRef" />
+  </div>
 </template>
 
 <script setup>
@@ -37,6 +43,8 @@ defineExpose({ openEdit });
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
-  margin: 0 0 0.8125rem 0;
+  margin-left: 5.5rem;
+  margin-right: 5.5rem;
+  margin-bottom: 0.5rem;
 }
 </style>

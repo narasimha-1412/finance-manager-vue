@@ -1,91 +1,74 @@
 <template>
-  <section class="table-section">
-    <div class="card chart-wrap">
-      <h2>Monthly Income vs Expense</h2>
-      <canvas ref="canvasRef" id="barChart"></canvas>
-    </div>
-  </section>
+  <v-card class="bar pa-4">
+    <h2 class="mb-4">Monthly Income vs Expense</h2>
+    <canvas ref="canvasRef" id="barChart"></canvas>
+  </v-card>
 </template>
 
 <script setup>
-import {
-  ref,
-  onMounted,
-  onBeforeUnmount,
-  watch,
-  computed,
-  nextTick,
-} from "vue";
+import { ref, computed, watchEffect } from "vue";
 import { Chart, registerables } from "chart.js";
 import { useFinanceStore } from "@/stores/finance";
+import { useTheme } from "vuetify";
 
 Chart.register(...registerables);
 
 const canvasRef = ref(null);
 let barChart = null;
 const store = useFinanceStore();
-
-// derive transactions from store (same pattern as SummaryCard/Insights)
 const transactions = computed(() => store.transactions ?? []);
 
-// ========== COLORS BASED ON THEME ==========
+const vuetifyTheme = useTheme();
+const isDark = computed(() => {
+  try {
+    return Boolean(vuetifyTheme.global?.name?.value === "dark");
+  } catch {
+    return document.body.classList.contains("dark");
+  }
+});
+
 function getColors() {
-  const isDark = document.body.classList.contains("dark");
   return {
-    text: isDark ? "#e6eef8" : "#1f2937",
-    grid: isDark ? "#2a2a3e" : "#e1e8ed",
+    text: isDark.value ? "#e6eef8" : "#1f2937",
+    grid: isDark.value ? "#2a2a3e" : "#e1e8ed",
     income: "#16a34a",
     expense: "#ef4444",
   };
 }
 
-// ========== DATE NORMALIZER ==========
 function normalizeDate(raw) {
-  if (raw === null || raw === undefined) return null;
-  if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw;
-  const d = new Date(String(raw) + "T00:00:00");
+  if (!raw) return null;
+  const d = raw instanceof Date ? raw : new Date(String(raw) + "T00:00:00");
   return isNaN(d.getTime()) ? null : d;
 }
 
-// ========== BUILD MONTHLY DATA ==========
 function buildMonthly(txns = []) {
   const monthly = {};
   txns.forEach((t) => {
     const td = normalizeDate(t.date);
     if (!td) return;
-    const month =
+    const m =
       td.getFullYear() + "-" + String(td.getMonth() + 1).padStart(2, "0");
-    if (!monthly[month]) monthly[month] = { income: 0, expense: 0 };
+    monthly[m] ??= { income: 0, expense: 0 };
     const key = t.type === "income" ? "income" : "expense";
-    monthly[month][key] += Number(t.amount || 0);
+    monthly[m][key] += Number(t.amount || 0);
   });
-
   const months = Object.keys(monthly).sort();
-  const incomeData = months.map((m) => monthly[m].income);
-  const expenseData = months.map((m) => monthly[m].expense);
-  return { months, incomeData, expenseData };
+  return {
+    months,
+    incomeData: months.map((m) => monthly[m].income),
+    expenseData: months.map((m) => monthly[m].expense),
+  };
 }
 
-// ========== DESTROY OLD CHART ==========
-function destroyChart() {
-  if (barChart) {
-    try {
-      barChart.destroy();
-    } catch (e) {
-      /* ignore */
-    }
-    barChart = null;
-  }
-}
-
-// ========== RENDER CHART ==========
-function renderCharts(txns = []) {
-  destroyChart();
-  const colors = getColors();
-  const { months, incomeData, expenseData } = buildMonthly(txns);
+function renderChart() {
   if (!canvasRef.value) return;
+  if (barChart) barChart.destroy();
   const ctx = canvasRef.value.getContext("2d");
   if (!ctx) return;
+
+  const colors = getColors();
+  const { months, incomeData, expenseData } = buildMonthly(transactions.value);
 
   barChart = new Chart(ctx, {
     type: "bar",
@@ -119,20 +102,14 @@ function renderCharts(txns = []) {
         },
         tooltip: {
           usePointStyle: true,
-          callbacks: {
-            label(ctx) {
-              return `${ctx.dataset.label}: ₹${ctx.formattedValue}`;
-            },
-          },
           titleColor: colors.text,
           bodyColor: colors.text,
-          backgroundColor: document.body.classList.contains("dark")
-            ? "rgba(15, 23, 36, 0.9)"
-            : "#ffffff",
+          backgroundColor: isDark.value ? "rgba(15,23,36,0.9)" : "#fff",
           borderColor: colors.grid,
           borderWidth: 1,
-          padding: 10,
-          displayColors: true,
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ₹${ctx.formattedValue}`,
+          },
         },
       },
       scales: {
@@ -143,48 +120,16 @@ function renderCharts(txns = []) {
   });
 }
 
-// computed flag for UI overlay
-const noData = computed(() => {
-  const { months } = buildMonthly(transactions.value ?? []);
-  return !months || months.length === 0;
-});
-
-// re-run when store transactions change
-const stopTxWatch = watch(
-  transactions,
-  (newVal, oldVal) => {
-    if (newVal === oldVal) return;
-    renderCharts(newVal ?? []);
-  },
-  { immediate: true, deep: false, flush: "post" }
-);
-
-// ========== THEME + STORAGE EVENTS ==========
-function onStorage(e) {
-  if (e.key === "financeData" || e.key === "theme")
-    renderCharts(transactions.value ?? []);
-}
-
-function onThemeChanged() {
-  renderCharts(transactions.value ?? []);
-}
-
-// ========== MOUNT / UNMOUNT ==========
-onMounted(() => {
-  nextTick().then(() => renderCharts(transactions.value ?? []));
-  window.addEventListener("storage", onStorage);
-  window.addEventListener("theme-changed", onThemeChanged);
-});
-
-onBeforeUnmount(() => {
-  destroyChart();
-  stopTxWatch();
-  window.removeEventListener("storage", onStorage);
-  window.removeEventListener("theme-changed", onThemeChanged);
-});
+watchEffect(renderChart);
 </script>
 
 <style lang="scss" scoped>
+.bar {
+  margin: 0 5.7rem;
+}
+</style>
+
+<!-- <style lang="scss" scoped>
 .chart-wrap {
   background: $card;
   position: relative;
@@ -238,4 +183,4 @@ canvas {
   height: 21.875rem !important;
   cursor: crosshair;
 }
-</style>
+</style> -->

@@ -1,20 +1,26 @@
 <template>
-  <section class="summary" style="margin-top: 24px">
-    <div class="card">
-      <p class="label">Highest Expense Category</p>
-      <h2>{{ topCategory }}</h2>
-    </div>
+  <v-row dense class="insight pb-2">
+    <v-col cols="12" sm="4">
+      <v-card class="pa-4" elevation="2">
+        <p class="text-subtitle-2">Highest Expense Category</p>
+        <h2>{{ topCategory }}</h2>
+      </v-card>
+    </v-col>
 
-    <div class="card">
-      <p class="label">Avg Saving</p>
-      <h2>₹{{ insightSavings }}</h2>
-    </div>
+    <v-col cols="12" sm="4">
+      <v-card class="pa-4" elevation="2">
+        <p class="text-subtitle-2">Avg Saving</p>
+        <h2>₹{{ insightSavings }}</h2>
+      </v-card>
+    </v-col>
 
-    <div class="card">
-      <p class="label">Total Transactions</p>
-      <h2>{{ totalTransactions }}</h2>
-    </div>
-  </section>
+    <v-col cols="12" sm="4">
+      <v-card class="pa-4" elevation="2">
+        <p class="text-subtitle-2">Total Transactions</p>
+        <h2>{{ totalTransactions }}</h2>
+      </v-card>
+    </v-col>
+  </v-row>
 </template>
 
 <script setup>
@@ -98,7 +104,13 @@ onMounted(() => {
 });
 </script>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
+.insight {
+  margin: 0 5.5rem;
+}
+</style>
+
+<!-- <style scoped lang="scss">
 .summary {
   display: grid;
   grid-template-columns: auto auto auto;
@@ -125,4 +137,4 @@ onMounted(() => {
     }
   }
 }
-</style>
+</style> -->

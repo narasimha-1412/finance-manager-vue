@@ -1,34 +1,45 @@
 <template>
-  <header>
-    <div class="left">
-      <h1>Finance Manager</h1>
-    </div>
+  <v-card class="pa-2">
+    <v-row align="center" no-gutters>
+      <v-col cols="auto">
+        <div class="text-h5">Finance Manager</div>
+      </v-col>
 
-    <div class="right">
-      <button class="btn primary" @click="goDashboard">
-        {{ isDashboard ? "← Back" : "Dashboard" }}
-      </button>
-      <!-- <button class="btn primary" @click="toggleTheme">
-        {{ isDark ? "Light" : "Dark" }}
-      </button> -->
-      <button class="btn reset" @click="resetData">Reset Data</button>
-    </div>
-  </header>
+      <v-spacer />
+
+      <v-col cols="auto">
+        <v-btn class="me-2" @click="toggleTheme">
+          {{ isDark ? "Light" : "Dark" }}
+        </v-btn>
+        <v-btn class="me-2" color="primary" @click="goDashboard">
+          {{ isDashboard ? "← Back" : "Dashboard" }}
+        </v-btn>
+        <v-btn color="error" @click="resetData">Reset Data</v-btn>
+      </v-col>
+    </v-row>
+  </v-card>
 </template>
 
 <script setup>
-import { computed, onMounted } from "vue";
+import { computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useFinanceStore } from "../stores/finance";
-// import { useUiStore } from "../stores/ui";
+import { useTheme } from "vuetify";
+
+const theme = useTheme();
 
 const store = useFinanceStore();
 const router = useRouter();
 const route = useRoute();
 
-// const theme = useUiStore();
+const isDark = computed(() => theme.global.name.value === "dark");
 
-// const isDark = computed(() => theme.isDark);
+function toggleTheme() {
+  const newTheme = isDark.value ? "light" : "dark";
+
+  theme.global.name.value = newTheme;
+  localStorage.setItem("theme", newTheme);
+}
 
 const isDashboard = computed(() => route.path === "/dashboard");
 function goDashboard() {
@@ -44,7 +55,7 @@ function resetData() {
 }
 </script>
 
-<style scoped lang="scss">
+<!-- <style scoped lang="scss">
 header {
   position: fixed;
   top: 0;
@@ -77,4 +88,4 @@ header {
     gap: 0.375rem;
   }
 }
-</style>
+</style> -->

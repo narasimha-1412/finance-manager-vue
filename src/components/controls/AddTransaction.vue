@@ -1,81 +1,99 @@
 <template>
-  <div
-    class="modal"
-    :class="{ show: showModal }"
-    aria-hidden="!showModal"
-    @click="backdropClick"
-  >
-    <div class="modal-content" role="dialog" aria-modal="true">
-      <h3 id="modal-title">
-        {{ editId ? "Edit Transaction" : "Add Transaction" }}
-      </h3>
+  <v-dialog v-model="showModal" width="520" persistent>
+    <v-card role="dialog" :aria-labelledby="'modal-title'">
+      <v-card-title>
+        <span id="modal-title">{{
+          editId ? "Edit Transaction" : "Add Transaction"
+        }}</span>
+      </v-card-title>
 
-      <form @submit.prevent="onSubmit" ref="formRef">
-        <label for="t-date">Date</label>
-        <input id="t-date" type="date" v-model="tDate" required />
+      <v-card-text>
+        <v-form ref="formRef" @submit.prevent="onSubmit">
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="tDate"
+                label="Date"
+                type="date"
+                required
+                density="comfortable"
+              />
+            </v-col>
 
-        <label for="t-type">Type</label>
-        <select id="t-type" v-model="tType">
-          <option value="expense">Expense</option>
-          <option value="income">Credit</option>
-        </select>
+            <v-col cols="12" md="6">
+              <v-select
+                v-model="tType"
+                :items="[
+                  { label: 'Expense', value: 'expense' },
+                  { label: 'Credit', value: 'income' },
+                ]"
+                item-title="label"
+                item-value="value"
+                label="Type"
+                density="comfortable"
+              />
+            </v-col>
 
-        <label for="t-category-select">Category</label>
-        <select
-          id="t-category-select"
-          v-model="tCategory"
-          @change="onCategoryChange"
-        >
-          <option value="Salary">Salary</option>
-          <option value="Food">Food</option>
-          <option value="Shopping">Shopping</option>
-          <option value="Bills">Bills</option>
-          <option value="Entertainment">Entertainment</option>
-          <option value="Travel">Travel</option>
-          <option value="Other">Other</option>
-        </select>
+            <v-col cols="12" md="6">
+              <v-select
+                v-model="tCategory"
+                :items="categories"
+                label="Category"
+                placeholder="Select"
+                persistent-placeholder
+                @update:modelValue="onCategoryChange"
+                clearable
+                density="comfortable"
+              />
+            </v-col>
 
-        <input
-          v-if="showOther"
-          id="t-category-other"
-          type="text"
-          v-model="tCategoryOther"
-          placeholder="Enter custom category"
-          style="margin-top: 8px"
-        />
+            <v-col cols="12" md="6" v-if="showOther">
+              <v-text-field
+                v-model="tCategoryOther"
+                label="Custom Category"
+                placeholder="Enter custom category"
+                density="comfortable"
+              />
+            </v-col>
 
-        <label for="t-desc">Description</label>
-        <input
-          id="t-desc"
-          type="text"
-          v-model="tDesc"
-          placeholder="Optional description"
-        />
+            <v-col cols="12">
+              <v-text-field
+                v-model="tDesc"
+                label="Description"
+                placeholder="Optional description"
+                density="comfortable"
+              />
+            </v-col>
 
-        <label for="t-amount">Amount</label>
-        <input
-          id="t-amount"
-          type="number"
-          min="0"
-          step="0.01"
-          v-model.number="tAmount"
-          required
-        />
-
-        <div class="modal-actions">
-          <button type="button" class="btn reset" @click="closeModal">
-            Cancel
-          </button>
-          <button type="submit" class="btn primary">Save</button>
-        </div>
-      </form>
-    </div>
-  </div>
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model.number="tAmount"
+                label="Amount"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                density="comfortable"
+              />
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col class="d-flex justify-end">
+              <v-btn color="error" class="mr-2" @click="closeModal"
+                >Cancel</v-btn
+              >
+              <v-btn color="primary" @click="onSubmit">Save</v-btn>
+            </v-col>
+          </v-row>
+        </v-form>
+      </v-card-text>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup>
 import { ref } from "vue";
-import { useFinanceStore } from "../../stores/finance";
+import { useFinanceStore } from "@/stores/finance";
 
 const store = useFinanceStore();
 
@@ -84,7 +102,7 @@ const editId = ref(null);
 
 const tDate = ref("");
 const tType = ref("expense");
-const tCategory = ref("Salary");
+const tCategory = ref("");
 const tCategoryOther = ref("");
 const tDesc = ref("");
 const tAmount = ref(0);
@@ -92,7 +110,7 @@ const tAmount = ref(0);
 const showOther = ref(false);
 const formRef = ref(null);
 
-const defaultCategories = [
+const categories = [
   "Salary",
   "Food",
   "Shopping",
@@ -104,16 +122,13 @@ const defaultCategories = [
 
 function openAdd() {
   editId.value = null;
-  const today = new Date().toISOString().slice(0, 10);
-
-  tDate.value = today;
+  tDate.value = new Date().toISOString().slice(0, 10);
   tType.value = "expense";
   tCategory.value = "Salary";
   tCategoryOther.value = "";
   tAmount.value = 0;
   tDesc.value = "";
   showOther.value = false;
-
   showModal.value = true;
 }
 
@@ -122,7 +137,7 @@ function openEdit(tx) {
   tDate.value = tx.date;
   tType.value = tx.type;
 
-  if (defaultCategories.includes(tx.category)) {
+  if (categories.includes(tx.category)) {
     tCategory.value = tx.category;
     showOther.value = false;
     tCategoryOther.value = "";
@@ -134,7 +149,6 @@ function openEdit(tx) {
 
   tAmount.value = tx.amount;
   tDesc.value = tx.description || "";
-
   showModal.value = true;
 }
 
@@ -143,20 +157,19 @@ function closeModal() {
   editId.value = null;
 }
 
-function backdropClick(e) {
-  if (e.target.classList.contains("modal")) closeModal();
-}
-
-function onCategoryChange() {
-  showOther.value = tCategory.value === "Other";
+function onCategoryChange(val) {
+  showOther.value = val === "Other";
   if (!showOther.value) tCategoryOther.value = "";
 }
 
 function onSubmit() {
   const finalCategory =
-    tCategory.value === "Other" ? tCategoryOther.value.trim() : tCategory.value;
+    tCategory.value === "Other"
+      ? tCategoryOther.value?.trim()
+      : tCategory.value;
 
   if (!finalCategory) {
+    // keep behavior simple — replace with snackbar if desired
     alert("Please enter a custom category.");
     return;
   }
@@ -179,7 +192,7 @@ function onSubmit() {
 defineExpose({ openAdd, openEdit });
 </script>
 
-<style scoped lang="scss">
+<!-- <style scoped lang="scss">
 .modal {
   display: none;
   position: fixed;
@@ -236,4 +249,4 @@ textarea {
   gap: 0.5rem;
   margin-top: 0.75rem;
 }
-</style>
+</style> -->

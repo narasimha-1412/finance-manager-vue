@@ -1,10 +1,18 @@
 <template>
-  <div class="container">
+  <!-- <div class="container">
     <NavBar />
     <SummaryCard />
 
     <router-view />
-  </div>
+  </div> -->
+
+  <VApp>
+    <VMain>
+      <NavBar />
+      <SummaryCard />
+      <router-view />
+    </VMain>
+  </VApp>
 </template>
 
 <script setup>
@@ -15,14 +23,18 @@ import NavBar from "./components/NavBar.vue";
 
 const store = useFinanceStore();
 onMounted(() => {
-  if (typeof store.loadData === "function") store.loadData();
+  store.loadData();
 });
 </script>
 
 <style lang="scss" scoped>
-.container {
-  max-width: 1100px;
-  margin: 24px auto;
-  padding-top: 51px;
+// .container {
+//   max-width: 1100px;
+//   margin: 24px auto;
+//   padding-top: 51px;
+// }
+
+.v-theme--light .v-main {
+  background: #f3f3f5 !important;
 }
 </style>

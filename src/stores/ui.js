@@ -12,19 +12,9 @@ export const useUiStore = defineStore("theme", {
   },
 
   actions: {
-    toggleTheme() {
-      this.theme = this.theme === "dark" ? "light" : "dark";
-      this.applyTheme();
-    },
-
-    applyTheme() {
+    toggle() {
+      this.theme = this.theme === "light" ? "dark" : "light";
       localStorage.setItem("theme", this.theme);
-
-      document.body.classList.toggle("dark", this.theme === "dark");
-
-      window.dispatchEvent(
-        new CustomEvent("theme-changed", { detail: this.theme })
-      );
     },
   },
 });

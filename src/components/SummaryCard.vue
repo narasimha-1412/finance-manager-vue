@@ -1,22 +1,33 @@
 <template>
-  <section class="summary">
-    <div class="card">
-      <p class="label">Total Income</p>
-      <h2 id="total-income">₹{{ summary.income }}</h2>
-    </div>
-    <div class="card">
-      <p class="label">Total Expenses</p>
-      <h2 id="total-expense">₹{{ summary.expense }}</h2>
-    </div>
-    <div class="card">
-      <p class="label">Net Balance</p>
-      <h2 id="income-left">₹{{ summary.left }}</h2>
-    </div>
-    <div class="card">
-      <p class="label">Expense-to-Income Ratio</p>
-      <h2 id="expense-ratio">{{ summary.ratio }}%</h2>
-    </div>
-  </section>
+  <v-row dense class="sum py-2">
+    <v-col cols="12" sm="6" md="3">
+      <v-card class="pa-4">
+        <p class="text-subtitle-2">Total Income</p>
+        <h2 class="text-h5">₹{{ summary.income }}</h2>
+      </v-card>
+    </v-col>
+
+    <v-col cols="12" sm="6" md="3">
+      <v-card class="pa-4">
+        <p class="text-subtitle-2">Total Expenses</p>
+        <h2 class="text-h5">₹{{ summary.expense }}</h2>
+      </v-card>
+    </v-col>
+
+    <v-col cols="12" sm="6" md="3">
+      <v-card class="pa-4">
+        <p class="text-subtitle-2">Net Balance</p>
+        <h2 class="text-h5">₹{{ summary.left }}</h2>
+      </v-card>
+    </v-col>
+
+    <v-col cols="12" sm="6" md="3">
+      <v-card class="pa-4">
+        <p class="text-subtitle-2">Expense-to-Income Ratio</p>
+        <h2 class="text-h5">{{ summary.ratio }}%</h2>
+      </v-card>
+    </v-col>
+  </v-row>
 </template>
 
 <script setup>
@@ -59,7 +70,13 @@ const summary = computed(() => {
 });
 </script>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
+.sum {
+  margin: 0 5.5rem;
+}
+</style>
+
+<!-- <style scoped lang="scss">
 .summary {
   display: grid;
   margin-bottom: 1.125rem;
@@ -86,4 +103,4 @@ const summary = computed(() => {
     }
   }
 }
-</style>
+</style> -->
