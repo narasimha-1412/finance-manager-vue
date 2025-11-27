@@ -1,73 +1,115 @@
 <template>
   <section class="table-section">
-    <v-card class="table-wrap">
-      <v-card-title>Transactions</v-card-title>
-      <div class="table-container">
-        <v-table height="300px" fixed-header>
-          <thead>
-            <tr>
-              <th>
-                Date
-                <v-btn
-                  variant="text"
-                  size="x-small"
-                  class="sort-btn"
-                  @click="handleSortClick('date')"
-                >
-                  {{ sortIcon("date") }}
-                </v-btn>
-              </th>
-              <th>Description</th>
-              <th>Category</th>
-              <th>Type</th>
-              <th>
-                Amount
-                <v-btn
-                  variant="text"
-                  size="x-small"
-                  class="sort-btn"
-                  @click="handleSortClick('amount')"
-                >
-                  {{ sortIcon("amount") }}
-                </v-btn>
-              </th>
-              <th class="center">Actions</th>
-            </tr>
-          </thead>
+    <v-card>
+      <!-- <v-card-title>Transactions</v-card-title>
+      <v-divider /> -->
+      <v-table class="equal-cols" height="340px" fixed-header>
+        <thead>
+          <tr>
+            <th>
+              <v-btn
+                class="font-weight-bold"
+                :ripple="false"
+                variant="text"
+                size="regular"
+                rounded="lg"
+                @click="handleSortClick('date')"
+                :append-icon="sortIcon('date')"
+                >Date</v-btn
+              >
+            </th>
+            <th class="font-weight-bold">Description</th>
+            <th class="font-weight-bold">Category</th>
+            <th class="font-weight-bold">Type</th>
+            <th>
+              <v-btn
+                class="font-weight-bold"
+                :ripple="false"
+                variant="text"
+                size="regular"
+                rounded="lg"
+                @click="handleSortClick('amount')"
+                :append-icon="sortIcon('amount')"
+                >Amount</v-btn
+              >
+            </th>
+            <th class="font-weight-bold">Actions</th>
+          </tr>
+        </thead>
 
-          <tbody class="scroll-body">
-            <tr v-for="t in paginatedList" :key="t.id">
-              <td>{{ t.date }}</td>
-              <td v-html="escapeHtml(t.description || '-')"></td>
-              <td v-html="escapeHtml(t.category || '-')"></td>
-              <td>{{ t.type === "income" ? "Credit" : "Expense" }}</td>
-              <td>₹{{ formatNum(Number(t.amount)) }}</td>
-              <td class="center actions">
-                <v-btn
-                  density="comfortable"
-                  class="edit"
-                  @click="emitEdit(t.id)"
-                  >Edit</v-btn
+        <tbody>
+          <tr v-for="t in paginatedList" :key="t.id">
+            <td>{{ t.date }}</td>
+            <td v-html="escapeHtml(t.description || '-')"></td>
+            <td v-html="escapeHtml(t.category || '-')"></td>
+            <td>{{ t.type === "income" ? "Credit" : "Expense" }}</td>
+            <td>₹{{ formatNum(Number(t.amount)) }}</td>
+            <td class="action-cell">
+              <v-hover v-slot="{ hover }">
+                <v-menu
+                  open-on-hover
+                  location="right"
+                  :offset="[8, 0]"
+                  close-on-content-click
                 >
-                <v-btn
-                  density="comfortable"
-                  color="error"
-                  class="delete"
-                  @click="emitDelete(t.id)"
-                  >Delete</v-btn
-                >
-              </td>
-            </tr>
-          </tbody>
-        </v-table>
-      </div>
+                  <template #activator="{ props: menuProps }">
+                    <v-btn
+                      v-bind="menuProps"
+                      variant="text"
+                      size="small"
+                      class="menu-btn pa-0"
+                      min-width="0"
+                      height="25"
+                      width="25"
+                      :class="{ 'menu-btn--hover': hover }"
+                      icon="mdi-dots-vertical"
+                    >
+                    </v-btn>
+                  </template>
 
+                  <v-card elevation="1" width="85">
+                    <v-btn
+                      min-width="0"
+                      height="25"
+                      width="25"
+                      variant="plain"
+                      class="pa-0 pl-2 d-flex justify-start"
+                      @click="emitEdit(t.id)"
+                      prepend-icon="mdi-pencil"
+                    >
+                      Edit
+                    </v-btn>
+
+                    <v-divider />
+
+                    <v-btn
+                      min-width="0"
+                      height="25"
+                      width="25"
+                      variant="plain"
+                      class="pa-0 pl-2 d-flex justify-start"
+                      @click="emitDelete(t.id)"
+                      prepend-icon="mdi-delete"
+                    >
+                      Delete
+                    </v-btn>
+                  </v-card>
+                </v-menu>
+              </v-hover>
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
+      <v-divider />
       <div class="pagination my-2" v-show="totalItems > 0">
         <v-btn
-          class="page-arrow"
+          :ripple="false"
+          variant="flat"
+          icon
+          height="27"
+          width="27"
           :disabled="currentPage === 1"
           @click="prevPage"
-          text
           >❮</v-btn
         >
 
@@ -75,10 +117,15 @@
           <template v-for="(p, idx) in pageButtons" :key="`pb-${idx}`">
             <v-btn
               v-if="p !== '...'"
-              class="btn-page"
-              :variant="p === currentPage ? 'tonal' : 'text'"
+              :variant="p === currentPage ? 'flat' : 'text'"
               @click="setPage(p)"
-              small
+              :color="p === currentPage ? 'primary' : ''"
+              :text-color="p === currentPage ? 'white' : ''"
+              :ripple="false"
+              icon
+              height="27"
+              width="27"
+              style="font-size: 11px"
             >
               {{ p }}
             </v-btn>
@@ -87,10 +134,13 @@
         </span>
 
         <v-btn
-          class="page-arrow"
+          :ripple="false"
+          variant="flat"
+          icon
+          height="27"
+          width="27"
           :disabled="currentPage === totalPages"
           @click="nextPage"
-          text
           >❯</v-btn
         >
       </div>
@@ -147,10 +197,12 @@ function handleSortClick(col) {
 }
 
 function sortIcon(col) {
-  const icons = { asc: "↑", desc: "↓", none: "⬍" };
-  if (sortState.value.column === col)
-    return icons[sortState.value.order] || icons.none;
-  return icons.none;
+  if (sortState.value.column !== col) return "mdi-swap-vertical";
+  return sortState.value.order === "asc"
+    ? "mdi-arrow-up"
+    : sortState.value.order === "desc"
+    ? "mdi-arrow-down"
+    : "mdi-swap-vertical";
 }
 
 const processedList = computed(() => {
@@ -249,91 +301,34 @@ function escapeHtml(str = "") {
 
 <style scoped lang="scss">
 .table-section {
-  // border-radius: 0.75rem;
   margin: 0.2rem 5.5rem;
-
-  // h2 {
-  //   margin-bottom: 0.25rem;
-  //   margin-top: 0;
-  // }
-
-  // .table-wrap {
-  //   overflow: hidden;
-  // }
-
-  // table {
-  //   width: 100%;
-  //   border-collapse: collapse;
-  //   table-layout: fixed;
-
-  //   // th,
-  //   // td {
-  //   //   padding: 0.625rem 0.75rem;
-  //   //   border-bottom: 0.0625rem solid rgba(16, 24, 40, 0.04);
-  //   //   text-align: left;
-  //   // }
-
-  //   // td.center,
-  //   // th.center {
-  //   //   text-align: center;
-  //   // }
-
-  //   // thead tr {
-  //   //   display: table;
-  //   //   width: 100%;
-  //   //   table-layout: fixed;
-  //   // }
-
-  //   // tbody.scroll-body {
-  //   //   display: block;
-  //   //   max-height: 15rem;
-  //   //   overflow-y: auto;
-  //   //   -webkit-overflow-scrolling: touch;
-  //   // }
-
-  //   // tbody.scroll-body tr {
-  //   //   display: table;
-  //   //   width: 100%;
-  //   //   table-layout: fixed;
-  //   // }
-  // }
-
-  .sort-btn {
-    cursor: pointer;
-    font-size: 1.1rem;
-    // color: $muted;
-    // padding: 0 0.375rem;
-    transition: color 0.2s;
-    font-size: 1.5rem;
-    padding-bottom: 1.9rem;
-    line-height: 1;
-    // &:hover {
-    //   color: accent;
-    // }
-  }
-
-  .actions button {
-    margin: 0 0.25rem;
-    padding: 0.375rem 0.5rem;
-    border-radius: 0.375rem;
-    border: none;
-    cursor: pointer;
-  }
-
-  .actions .edit {
-    background: #16a34a;
-    color: #fff;
-  }
-  .actions .delete {
-    background: #ef4444;
-    color: #fff;
-  }
 
   #no-data {
     padding: 1rem;
     text-align: center;
-    // color: $muted;
   }
+}
+
+.equal-cols th,
+.equal-cols td {
+  width: 1%;
+  vertical-align: middle;
+}
+.equal-cols th {
+  font-weight: 600; /* semibold */
+}
+
+.action-cell {
+  position: relative;
+}
+
+.menu-btn--hover {
+  background-color: rgba(0, 0, 0, 0.04); /* light hover bg */
+}
+
+.v-card > .v-btn {
+  width: 100%;
+  justify-content: center;
 }
 
 .pagination {
@@ -341,36 +336,5 @@ function escapeHtml(str = "") {
   gap: 0.5rem;
   justify-content: center;
   margin-top: 1rem;
-
-  // .page-arrow {
-  //   width: 2.125rem;
-  //   height: 2.125rem;
-  //   border-radius: 50%;
-  //   display: inline-flex;
-  //   align-items: center;
-  //   justify-content: center;
-
-  //   // &:hover:not(:disabled) {
-  //   //   // background: $primary;
-  //   //   color: #fff;
-  //   // }
-
-  //   // &:disabled {
-  //   //   opacity: 0.4;
-  //   //   cursor: not-allowed;
-  //   // }
-  // }
-
-  // .active-page {
-  //   // background: $primary;
-  //   color: blue;
-  //   border: none;
-  // }
-
-  // button {
-  //   padding: 0.375rem 0.625rem;
-  //   border-radius: 0.375rem;
-  //   // border-color: $card;
-  // }
 }
 </style>

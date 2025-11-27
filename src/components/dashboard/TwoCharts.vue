@@ -2,14 +2,14 @@
   <v-row class="chart py-1" align="stretch">
     <v-col cols="12" md="6">
       <v-card class="pa-4 h-100">
-        <h2 class="mb-4">Expense Distribution by Category</h2>
+        <h3 class="mb-4">Expense Distribution by Category</h3>
         <canvas ref="pieRef" id="pieChart"></canvas>
       </v-card>
     </v-col>
 
     <v-col cols="12" md="6">
       <v-card class="pa-4 h-100">
-        <h2 class="mb-4">Balance Over Time</h2>
+        <h3 class="mb-4">Balance Over Time</h3>
         <canvas ref="lineRef" id="lineChart"></canvas>
       </v-card>
     </v-col>

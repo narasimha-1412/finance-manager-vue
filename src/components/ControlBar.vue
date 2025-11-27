@@ -1,12 +1,12 @@
 <template>
-  <!-- <section class="controls">
-    <button class="btn primary" @click="openAdd">+ Add Transaction</button>
-    <FilterTransactions @filter-change="forwardFilter" />
-    <AddTransaction ref="addRef" />
-  </section> -->
-
   <div class="controls">
-    <v-btn color="primary" @click="openAdd">+ Add Transaction</v-btn>
+    <v-btn
+      size="small"
+      prepend-icon="mdi-plus-thick"
+      color="primary"
+      @click="openAdd"
+      >Add Transaction</v-btn
+    >
     <FilterTransactions @filter-change="forwardFilter" />
     <AddTransaction ref="addRef" />
   </div>

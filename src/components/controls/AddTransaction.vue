@@ -1,22 +1,21 @@
 <template>
-  <v-dialog v-model="showModal" width="520" persistent>
-    <v-card role="dialog" :aria-labelledby="'modal-title'">
-      <v-card-title>
-        <span id="modal-title">{{
-          editId ? "Edit Transaction" : "Add Transaction"
-        }}</span>
+  <v-dialog v-model="showModal" width="500">
+    <v-card class="pa-2" role="dialog">
+      <v-card-title class="font-weight-bold"
+        >{{ editId ? "Edit Transaction" : "Add Transaction" }}
       </v-card-title>
 
-      <v-card-text>
+      <v-card-text class="pa-1">
         <v-form ref="formRef" @submit.prevent="onSubmit">
-          <v-row>
+          <v-row dense>
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="tDate"
-                label="Date"
+                label="Date *"
                 type="date"
                 required
-                density="comfortable"
+                variant="outlined"
+                :rules="[(v) => !!v || 'Date is required']"
               />
             </v-col>
 
@@ -29,8 +28,9 @@
                 ]"
                 item-title="label"
                 item-value="value"
-                label="Type"
-                density="comfortable"
+                label="Type *"
+                variant="outlined"
+                :rules="[(v) => !!v || 'Type is required']"
               />
             </v-col>
 
@@ -38,12 +38,13 @@
               <v-select
                 v-model="tCategory"
                 :items="categories"
-                label="Category"
+                label="Category *"
                 placeholder="Select"
                 persistent-placeholder
                 @update:modelValue="onCategoryChange"
                 clearable
-                density="comfortable"
+                variant="outlined"
+                :rules="[(v) => !!v || 'Category is required']"
               />
             </v-col>
 
@@ -52,37 +53,40 @@
                 v-model="tCategoryOther"
                 label="Custom Category"
                 placeholder="Enter custom category"
-                density="comfortable"
-              />
-            </v-col>
-
-            <v-col cols="12">
-              <v-text-field
-                v-model="tDesc"
-                label="Description"
-                placeholder="Optional description"
-                density="comfortable"
+                variant="outlined"
               />
             </v-col>
 
             <v-col cols="12" md="6">
               <v-text-field
                 v-model.number="tAmount"
-                label="Amount"
+                label="Amount *"
                 type="number"
                 min="0"
                 step="0.01"
                 required
-                density="comfortable"
+                variant="outlined"
+                :rules="[
+                  (v) => !!v || 'Amount is required',
+                  (v) => v > 0 || 'Amount must be > 0',
+                ]"
+              />
+            </v-col>
+
+            <v-col cols="12">
+              <v-textarea
+                v-model="tDesc"
+                label="Description"
+                variant="outlined"
               />
             </v-col>
           </v-row>
-          <v-row>
+          <v-row dense>
             <v-col class="d-flex justify-end">
-              <v-btn color="error" class="mr-2" @click="closeModal"
+              <v-btn size="small" color="error" class="mr-2" @click="closeModal"
                 >Cancel</v-btn
               >
-              <v-btn color="primary" @click="onSubmit">Save</v-btn>
+              <v-btn size="small" color="primary" @click="onSubmit">Save</v-btn>
             </v-col>
           </v-row>
         </v-form>
@@ -162,15 +166,23 @@ function onCategoryChange(val) {
   if (!showOther.value) tCategoryOther.value = "";
 }
 
-function onSubmit() {
+async function onSubmit() {
+  const { valid } = await formRef.value.validate();
+  if (!valid) return;
+
   const finalCategory =
     tCategory.value === "Other"
       ? tCategoryOther.value?.trim()
       : tCategory.value;
 
   if (!finalCategory) {
-    // keep behavior simple — replace with snackbar if desired
     alert("Please enter a custom category.");
+    return;
+  }
+
+  const amountNum = Number(tAmount.value);
+  if (!isFinite(amountNum) || amountNum <= 0) {
+    alert("Please enter a valid amount greater than 0.");
     return;
   }
 
@@ -179,8 +191,8 @@ function onSubmit() {
     date: tDate.value,
     type: tType.value,
     category: finalCategory,
-    amount: Number(tAmount.value),
-    description: tDesc.value.trim(),
+    amount: amountNum,
+    description: (tDesc.value || "").trim(),
   };
 
   if (editId.value) store.updateTransaction(obj);
@@ -191,62 +203,3 @@ function onSubmit() {
 
 defineExpose({ openAdd, openEdit });
 </script>
-
-<!-- <style scoped lang="scss">
-.modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(2, 6, 23, 0.45);
-  align-items: center;
-  justify-content: center;
-  padding: 1.25rem;
-  z-index: 50;
-  &.show {
-    display: flex;
-  }
-}
-
-.modal-content {
-  width: 100%;
-  max-width: 26.25rem;
-  background: $card;
-  border-radius: 0.75rem;
-  padding: 1.125rem;
-  box-shadow: $shadow;
-}
-
-h3 {
-  margin: 0 0 0.625rem 0;
-}
-
-label {
-  display: block;
-  margin-top: 0.5rem;
-  margin-bottom: 0.375rem;
-  color: inherit;
-  font-weight: 600;
-}
-
-input[type="text"],
-input[type="date"],
-input[type="number"],
-select,
-textarea {
-  width: 100%;
-  padding: 0.5625rem;
-  border-radius: 0.5rem;
-  border: 0.0625rem solid #000;
-  background: transparent;
-  box-sizing: border-box;
-}
-
-#t-category-other {
-  margin-top: 0.5rem;
-}
-
-.modal-actions {
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-</style> -->

@@ -1,18 +1,15 @@
 <template>
-  <!-- <div class="container">
-    <NavBar />
-    <SummaryCard />
-
-    <router-view />
-  </div> -->
-
-  <VApp>
-    <VMain>
-      <NavBar />
-      <SummaryCard />
-      <router-view />
-    </VMain>
-  </VApp>
+  <v-fade-transition mode="out-in">
+    <div :key="theme">
+      <VApp>
+        <VMain>
+          <NavBar />
+          <SummaryCard />
+          <router-view />
+        </VMain>
+      </VApp>
+    </div>
+  </v-fade-transition>
 </template>
 
 <script setup>
@@ -27,14 +24,11 @@ onMounted(() => {
 });
 </script>
 
-<style lang="scss" scoped>
-// .container {
-//   max-width: 1100px;
-//   margin: 24px auto;
-//   padding-top: 51px;
-// }
-
+<style lang="scss">
 .v-theme--light .v-main {
   background: #f3f3f5 !important;
+}
+.v-btn .v-btn__content {
+  text-transform: none !important;
 }
 </style>

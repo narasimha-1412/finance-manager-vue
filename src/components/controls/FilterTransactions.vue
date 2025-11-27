@@ -1,27 +1,34 @@
 <template>
   <span class="right">
-    <v-btn color="primary" class="me-2" @click="openFilter">Filter</v-btn>
-    <v-btn color="error" @click="clearFilters">Clear</v-btn>
+    <v-btn
+      size="small"
+      color="primary"
+      class="me-2"
+      @click="openFilter"
+      prepend-icon="mdi-filter"
+      >Filter</v-btn
+    >
+    <v-btn color="error" size="small" @click="clearFilters">Clear</v-btn>
   </span>
 
-  <v-dialog v-model="showFilter" width="500">
+  <v-dialog v-model="showFilter" width="400">
     <v-card class="pa-2">
-      <v-card-title>Filter Transactions</v-card-title>
+      <v-card-title class="font-weight-bold">Filter Transactions</v-card-title>
 
-      <v-card-text>
+      <v-card-text class="pa-1">
         <v-form @submit.prevent="applyFilters">
           <v-text-field
             v-model="filterStart"
             label="From Date"
             type="date"
-            density="comfortable"
+            variant="outlined"
           />
 
           <v-text-field
             v-model="filterEnd"
             label="To Date"
             type="date"
-            density="comfortable"
+            variant="outlined"
           />
 
           <v-select
@@ -31,12 +38,16 @@
             persistent-placeholder
             :items="categories"
             clearable
-            density="comfortable"
+            variant="outlined"
           />
           <v-row>
             <v-col class="d-flex justify-end">
-              <v-btn color="error" @click="closeFilter">Cancel</v-btn>
-              <v-btn color="primary" class="ms-2" type="submit">Apply</v-btn>
+              <v-btn size="small" color="error" @click="closeFilter"
+                >Cancel</v-btn
+              >
+              <v-btn color="primary" size="small" class="ms-2" type="submit"
+                >Apply</v-btn
+              >
             </v-col>
           </v-row>
         </v-form>

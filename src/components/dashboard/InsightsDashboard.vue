@@ -3,21 +3,21 @@
     <v-col cols="12" sm="4">
       <v-card class="pa-4" elevation="2">
         <p class="text-subtitle-2">Highest Expense Category</p>
-        <h2>{{ topCategory }}</h2>
+        <h2 class="text-h5">{{ topCategory }}</h2>
       </v-card>
     </v-col>
 
     <v-col cols="12" sm="4">
       <v-card class="pa-4" elevation="2">
         <p class="text-subtitle-2">Avg Saving</p>
-        <h2>₹{{ insightSavings }}</h2>
+        <h2 class="text-h5">₹{{ insightSavings }}</h2>
       </v-card>
     </v-col>
 
     <v-col cols="12" sm="4">
       <v-card class="pa-4" elevation="2">
         <p class="text-subtitle-2">Total Transactions</p>
-        <h2>{{ totalTransactions }}</h2>
+        <h2 class="text-h5">{{ totalTransactions }}</h2>
       </v-card>
     </v-col>
   </v-row>
